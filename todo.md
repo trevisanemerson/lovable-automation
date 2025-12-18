@@ -14,10 +14,10 @@
 - [ ] Diferentes pacotes de créditos (ex: 10, 50, 100, 500 créditos)
 
 ## Pagamento PIX
-- [x] Integração com API de PIX (Pix Dinâmico)
+- [x] Integração com API de PIX (Mercado Pago)
 - [x] Geração de QR Code para pagamento
 - [x] Geração de código Copia e Cola
-- [ ] Verificação de pagamento recebido
+- [x] Verificação de pagamento recebido
 - [ ] Atualização automática de saldo após pagamento confirmado
 - [x] Histórico de transações
 

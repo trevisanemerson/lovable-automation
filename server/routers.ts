@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as db from "./db";
 import * as auth from "./auth";
 import { TRPCError } from "@trpc/server";
+import * as mercadopago from "./mercadopago";
 
 export const appRouter = router({
   system: systemRouter,
@@ -167,12 +168,36 @@ export const appRouter = router({
 
         const transactionId = (result as any)?.insertId || 0;
 
-        return {
-          success: true,
-          transactionId,
-          amount: selectedPlan.price,
-          amountInCents: selectedPlan.priceInCents,
-        };
+        try {
+          const pixPayment = await mercadopago.createPixPayment({
+            planId: selectedPlan.id,
+            planName: selectedPlan.name,
+            credits: selectedPlan.credits,
+            priceInCents: selectedPlan.priceInCents,
+            userEmail: ctx.user.email || "user@lovable.dev",
+            userId: ctx.user.id,
+            externalReference: `txn-${transactionId}`,
+          });
+
+          return {
+            success: true,
+            transactionId,
+            amount: selectedPlan.price,
+            amountInCents: selectedPlan.priceInCents,
+            pixPayment: {
+              id: pixPayment.id,
+              qrCode: pixPayment.qrCode,
+              copyPaste: pixPayment.copyPaste,
+              expiresAt: pixPayment.expiresAt,
+            },
+          };
+        } catch (error) {
+          console.error("[Transactions] Error creating PIX payment:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao gerar código PIX. Tente novamente.",
+          });
+        }
       }),
 
     getById: protectedProcedure

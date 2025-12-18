@@ -6,14 +6,13 @@ import { trpc } from "@/lib/trpc";
 import { ArrowLeft, Copy, CheckCircle2, Loader2, Zap, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import QRCode from "qrcode";
 
 export default function Payment() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
-  const [copied, setCopied] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [pixData, setPixData] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
   
   // Get plan ID from URL params
   const [searchParams] = useState(() => {
@@ -27,11 +26,10 @@ export default function Payment() {
   const { data: plans, isLoading: plansLoading } = trpc.credits.getPlans.useQuery();
   const createTransactionMutation = trpc.transactions.create.useMutation({
     onSuccess: (data) => {
-      setPaymentConfirmed(true);
-      toast.success("Pagamento registrado! Seus créditos serão adicionados em breve.");
-      setTimeout(() => {
-        setLocation("/dashboard");
-      }, 2000);
+      if (data.pixPayment) {
+        setPixData(data.pixPayment);
+        toast.success("Código PIX gerado com sucesso!");
+      }
     },
     onError: (error) => {
       toast.error(error.message || "Erro ao processar pagamento");
@@ -41,15 +39,11 @@ export default function Payment() {
   const selectedPlan = plans?.find(p => p.id === planId);
 
   useEffect(() => {
-    if (selectedPlan) {
-      const qrData = `00020126580014br.gov.bcb.pix0136${selectedPlan.id}5204000053039865802BR5913LOVABLE6009SAO PAULO62410503***63041D3D`;
-      QRCode.toDataURL(qrData, {
-        errorCorrectionLevel: "H",
-        width: 300,
-        margin: 1,
-      }).then(setQrCodeUrl);
+    // Auto-create transaction when component mounts
+    if (selectedPlan && !pixData && !createTransactionMutation.isPending) {
+      createTransactionMutation.mutate({ planId: selectedPlan.id });
     }
-  }, [selectedPlan]);
+  }, [selectedPlan?.id]);
 
   if (!user) {
     setLocation("/login");
@@ -57,16 +51,20 @@ export default function Payment() {
   }
 
   const handleCopyPaste = () => {
-    const copyPasteCode = `00020126580014br.gov.bcb.pix0136${selectedPlan?.id}5204000053039865802BR5913LOVABLE6009SAO PAULO62410503***63041D3D`;
-    navigator.clipboard.writeText(copyPasteCode);
-    setCopied(true);
-    toast.success("Código copiado para a área de transferência!");
-    setTimeout(() => setCopied(false), 2000);
+    if (pixData?.copyPaste) {
+      navigator.clipboard.writeText(pixData.copyPaste);
+      setCopied(true);
+      toast.success("Código copiado para a área de transferência!");
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
-  const handleCreateTransaction = async () => {
-    if (!selectedPlan) return;
-    await createTransactionMutation.mutateAsync({ planId: selectedPlan.id });
+  const handlePaymentConfirmed = () => {
+    setPaymentConfirmed(true);
+    toast.success("Pagamento confirmado! Seus créditos serão adicionados em breve.");
+    setTimeout(() => {
+      setLocation("/dashboard");
+    }, 2000);
   };
 
   return (
@@ -84,7 +82,7 @@ export default function Payment() {
           </Button>
           <div className="flex items-center gap-2">
             <Zap className="w-5 h-5 text-blue-400" />
-            <span className="text-white font-semibold">Pagamento</span>
+            <span className="text-white font-semibold">Pagamento PIX</span>
           </div>
           <div className="w-20" />
         </div>
@@ -92,7 +90,7 @@ export default function Payment() {
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 py-12">
-        {plansLoading ? (
+        {plansLoading || createTransactionMutation.isPending ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
@@ -140,100 +138,114 @@ export default function Payment() {
             </Card>
 
             {/* Payment Methods */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-white">Pagamento via PIX</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Escolha a forma que preferir para pagar
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                {/* PIX QR Code */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500/20 rounded flex items-center justify-center text-blue-400 font-bold text-sm">
-                      1
+            {pixData ? (
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white">Pagamento via PIX</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Escolha a forma que preferir para pagar
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {/* PIX QR Code */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500/20 rounded flex items-center justify-center text-blue-400 font-bold text-sm">
+                        1
+                      </div>
+                      <h3 className="text-white font-semibold">Escaneie o QR Code</h3>
                     </div>
-                    <h3 className="text-white font-semibold">Escaneie o QR Code</h3>
+                    {pixData.qrCode && (
+                      <div className="flex justify-center p-6 bg-white rounded-lg">
+                        <img 
+                          src={`data:image/png;base64,${pixData.qrCode}`} 
+                          alt="QR Code PIX" 
+                          className="w-64 h-64"
+                        />
+                      </div>
+                    )}
+                    <p className="text-sm text-slate-400 text-center">
+                      Abra seu app bancário e escaneie o código acima para pagar instantaneamente
+                    </p>
                   </div>
-                  {qrCodeUrl && (
-                    <div className="flex justify-center p-6 bg-white rounded-lg">
-                      <img src={qrCodeUrl} alt="QR Code PIX" className="w-64 h-64" />
-                    </div>
-                  )}
-                  <p className="text-sm text-slate-400 text-center">
-                    Abra seu app bancário e escaneie o código acima para pagar instantaneamente
-                  </p>
-                </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px bg-slate-700" />
-                  <span className="text-slate-500 text-sm">OU</span>
-                  <div className="flex-1 h-px bg-slate-700" />
-                </div>
-
-                {/* PIX Copia e Cola */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-cyan-500/20 rounded flex items-center justify-center text-cyan-400 font-bold text-sm">
-                      2
-                    </div>
-                    <h3 className="text-white font-semibold">Copia e Cola</h3>
+                  {/* Divider */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-px bg-slate-700" />
+                    <span className="text-slate-500 text-sm">OU</span>
+                    <div className="flex-1 h-px bg-slate-700" />
                   </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1 bg-slate-800 rounded-lg p-4 border border-slate-700 overflow-hidden">
-                      <p className="text-slate-300 text-sm break-all font-mono text-xs">
-                        00020126580014br.gov.bcb.pix0136{selectedPlan.id}5204000053039865802BR5913LOVABLE6009SAO PAULO62410503***63041D3D
-                      </p>
+
+                  {/* PIX Copia e Cola */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-cyan-500/20 rounded flex items-center justify-center text-cyan-400 font-bold text-sm">
+                        2
+                      </div>
+                      <h3 className="text-white font-semibold">Copia e Cola</h3>
                     </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-slate-800 rounded-lg p-4 border border-slate-700 overflow-hidden">
+                        <p className="text-slate-300 text-sm break-all font-mono text-xs">
+                          {pixData.copyPaste}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleCopyPaste}
+                        className={`flex-shrink-0 transition-all ${
+                          copied
+                            ? "bg-green-600 hover:bg-green-700"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        } text-white`}
+                      >
+                        {copied ? (
+                          <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-slate-400">
+                      Copie o código e cole no seu app bancário para pagar
+                    </p>
+                  </div>
+
+                  {/* Confirm Payment */}
+                  <div className="pt-4 border-t border-slate-700 space-y-4">
                     <Button
-                      onClick={handleCopyPaste}
-                      className={`flex-shrink-0 transition-all ${
-                        copied
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      } text-white`}
+                      onClick={handlePaymentConfirmed}
+                      disabled={paymentConfirmed}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-6 text-lg"
                     >
-                      {copied ? (
-                        <CheckCircle2 className="w-4 h-4" />
+                      {paymentConfirmed ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Pagamento Confirmado
+                        </>
                       ) : (
-                        <Copy className="w-4 h-4" />
+                        "Já Paguei via PIX"
                       )}
                     </Button>
+                    <p className="text-xs text-slate-400 text-center">
+                      Clique no botão acima após realizar o pagamento para confirmar e receber seus créditos
+                    </p>
                   </div>
-                  <p className="text-sm text-slate-400">
-                    Copie o código e cole no seu app bancário para pagar
-                  </p>
-                </div>
-
-                {/* Confirm Payment */}
-                <div className="pt-4 border-t border-slate-700 space-y-4">
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="py-12 text-center">
+                  <AlertCircle className="w-8 h-8 text-yellow-400 mx-auto mb-4" />
+                  <p className="text-slate-400 mb-4">Erro ao gerar código PIX</p>
                   <Button
-                    onClick={handleCreateTransaction}
-                    disabled={createTransactionMutation.isPending || paymentConfirmed}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-6 text-lg"
+                    onClick={() => createTransactionMutation.mutate({ planId: selectedPlan.id })}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    {createTransactionMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processando...
-                      </>
-                    ) : paymentConfirmed ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Pagamento Confirmado
-                      </>
-                    ) : (
-                      "Já Paguei via PIX"
-                    )}
+                    Tentar Novamente
                   </Button>
-                  <p className="text-xs text-slate-400 text-center">
-                    Clique no botão acima após realizar o pagamento para confirmar e receber seus créditos
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Info Cards */}
             <div className="grid md:grid-cols-2 gap-4">
