@@ -61,7 +61,7 @@ export default function Dashboard() {
       toast.error("Preencha todos os campos corretamente");
       return;
     }
-    await createTaskMutation.mutateAsync({ lovableInviteLink: inviteLink, quantityRequested: quantity });
+    await createTaskMutation.mutateAsync({ lovableInviteLink: inviteLink, quantity: quantity });
   };
 
   return (
@@ -228,15 +228,15 @@ export default function Dashboard() {
                       <div className="grid md:grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-slate-400">Solicitadas</p>
-                          <p className="text-white font-semibold">{task.quantityRequested}</p>
+                          <p className="text-white font-semibold">{task.quantity}</p>
                         </div>
                         <div>
                           <p className="text-slate-400">Criadas</p>
-                          <p className="text-white font-semibold">{task.quantityCompleted}</p>
+                          <p className="text-white font-semibold">0</p>
                         </div>
                         <div>
                           <p className="text-slate-400">Créditos Usados</p>
-                          <p className="text-white font-semibold">{task.creditsUsed}</p>
+                          <p className="text-white font-semibold">{task.quantity}</p>
                         </div>
                         <div>
                           <p className="text-slate-400">Status</p>

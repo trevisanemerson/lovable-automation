@@ -7,9 +7,11 @@ import * as db from "./db";
 import * as auth from "./auth";
 import { TRPCError } from "@trpc/server";
 import * as mercadopago from "./mercadopago";
+import { tasksRouter } from "./routers/tasks";
 
 export const appRouter = router({
   system: systemRouter,
+  tasks: tasksRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -215,78 +217,6 @@ export const appRouter = router({
         }
 
         return transaction;
-      }),
-  }),
-
-  tasks: router({
-    create: protectedProcedure
-      .input(z.object({
-        lovableInviteLink: z.string().url(),
-        quantityRequested: z.number().min(1).max(1000),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const balance = await db.getUserCreditBalance(ctx.user.id);
-        const creditsNeeded = input.quantityRequested;
-
-        if (!balance || balance.availableCredits < creditsNeeded) {
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message: "Créditos insuficientes",
-          });
-        }
-
-        const result = await db.createTask(
-          ctx.user.id,
-          input.lovableInviteLink,
-          input.quantityRequested
-        );
-
-        const taskId = (result as any)?.insertId || 0;
-
-        return {
-          success: true,
-          taskId,
-          quantityRequested: input.quantityRequested,
-        };
-      }),
-
-    getById: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .query(async ({ input, ctx }) => {
-        const task = await db.getTaskById(input.id);
-
-        if (!task || task.userId !== ctx.user.id) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Tarefa não encontrada",
-          });
-        }
-
-        return task;
-      }),
-
-    list: protectedProcedure
-      .query(async ({ ctx }) => {
-        return await db.getUserTasks(ctx.user.id);
-      }),
-
-    getLogs: protectedProcedure
-      .input(z.object({
-        taskId: z.number(),
-      }))
-      .query(async ({ input, ctx }) => {
-        const task = await db.getTaskById(input.taskId);
-
-        if (!task || task.userId !== ctx.user.id) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Tarefa não encontrada",
-          });
-        }
-
-        return await db.getTaskLogs(input.taskId);
       }),
   }),
 });
