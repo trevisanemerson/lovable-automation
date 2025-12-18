@@ -133,3 +133,10 @@
 - [x] Implementar atualização de progresso
 - [x] Adicionar retry automático
 - [x] Testar fluxo completo
+
+
+## Deployment
+- [x] Criar Dockerfile
+- [x] Documentar deployment em Railway/Render
+- [x] Criar scripts de inicialização
+- [x] Guia de deployment rápido
