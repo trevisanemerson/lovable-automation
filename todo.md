@@ -116,3 +116,12 @@
 - [x] Webhook não recebe notificações do Mercado Pago
 - [x] Créditos não são creditados automaticamente após pagamento
 - [x] Transação não é marcada como confirmada
+
+
+## Automação Playwright para Lovable.dev
+- [x] Instalar Playwright e dependências
+- [x] Criar script de registro com email temporário
+- [x] Implementar login automático
+- [x] Criar projeto automaticamente
+- [x] Publicar projeto
+- [x] Testar fluxo completo
