@@ -97,3 +97,12 @@
 - [x] Integração com fluxo de pagamento PIX
 - [x] Redirecionamento após pagamento confirmado
 - [x] Validação de saldo antes de criar tarefa
+
+
+## Webhook Mercado Pago
+- [x] Endpoint de webhook para receber notificações
+- [x] Validação de assinatura do webhook
+- [x] Processamento de pagamentos confirmados
+- [x] Crédito automático de saldo
+- [x] Logging e tratamento de erros
+- [x] Testes de webhook

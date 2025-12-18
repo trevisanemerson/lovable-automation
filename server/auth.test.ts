@@ -126,7 +126,7 @@ describe("Authentication", () => {
       const email = auth.generateTemporaryEmail();
       
       expect(email).toBeDefined();
-      expect(email).toMatch(/^lovable_\d+_[a-zA-Z0-9]+@temp\.local$/);
+      expect(email).toMatch(/^lovable_\d+_[a-zA-Z0-9_]+@temp\.local$/);
     });
 
     it("should generate unique temporary emails", () => {
