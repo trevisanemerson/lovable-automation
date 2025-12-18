@@ -44,7 +44,7 @@ export async function createPixPayment(
       },
       description: `${params.planName} - ${params.credits} créditos`,
       external_reference: params.externalReference,
-      // notification_url: `${process.env.WEBHOOK_URL || "http://localhost:3000"}/api/webhooks/mercadopago`,
+      notification_url: "https://lovableapp-8ae3qare.manus.space/api/webhooks/mercadopago",
     };
 
     const response = await payment.create({ body: paymentData });

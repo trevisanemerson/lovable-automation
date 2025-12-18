@@ -20,6 +20,7 @@ describe("Mercado Pago Webhook", () => {
         action: "payment.created",
         data: {
           id: 12345,
+          external_reference: "txn-1-1234567890",
         },
       },
       headers: {
@@ -46,7 +47,7 @@ describe("Mercado Pago Webhook", () => {
       amountInCents: 9900,
     };
 
-    vi.mocked(db.getTransactionById).mockResolvedValue(mockTransaction as any);
+    vi.mocked(db.getTransactionByExternalId).mockResolvedValue(mockTransaction as any);
 
     const mockPlan = {
       id: 1,
@@ -80,7 +81,7 @@ describe("Mercado Pago Webhook", () => {
     );
 
     // Verify database calls
-    expect(db.getTransactionById).toHaveBeenCalledWith(12345);
+    expect(db.getTransactionByExternalId).toHaveBeenCalledWith("txn-1-1234567890");
     expect(db.updateTransactionStatus).toHaveBeenCalledWith(1, "confirmed", expect.any(Date));
     expect(db.createOrUpdateUserCredit).toHaveBeenCalledWith(1, 100);
   });
@@ -92,6 +93,7 @@ describe("Mercado Pago Webhook", () => {
         action: "payment.created",
         data: {
           id: 12345,
+          external_reference: "txn-1-1234567890",
         },
       },
       headers: {
@@ -178,6 +180,7 @@ describe("Mercado Pago Webhook", () => {
         action: "payment.created",
         data: {
           id: 12345,
+          external_reference: "txn-1-1234567890",
         },
       },
       headers: {
@@ -203,7 +206,7 @@ describe("Mercado Pago Webhook", () => {
       amountInCents: 9900,
     };
 
-    vi.mocked(db.getTransactionById).mockResolvedValue(mockTransaction as any);
+    vi.mocked(db.getTransactionByExternalId).mockResolvedValue(mockTransaction as any);
 
     await handleMercadoPagoWebhook(req, res);
 

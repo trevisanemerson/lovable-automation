@@ -110,3 +110,9 @@
 
 ## Bug Fix
 - [x] QR Code não está sendo gerado corretamente
+
+
+## Bug: Webhook não está confirmando pagamentos
+- [x] Webhook não recebe notificações do Mercado Pago
+- [x] Créditos não são creditados automaticamente após pagamento
+- [x] Transação não é marcada como confirmada

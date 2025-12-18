@@ -260,6 +260,19 @@ export async function getTransactionById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function getTransactionByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.externalId, externalId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
 export async function updateTransactionStatus(
   id: number,
   status: "pending" | "confirmed" | "failed" | "expired",

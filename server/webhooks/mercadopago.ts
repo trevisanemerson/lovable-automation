@@ -80,14 +80,25 @@ async function handlePaymentNotification(body: any, res: Response) {
       });
     }
 
-    // Get transaction details from database
-    // Note: We use paymentId as transaction ID for now
-    const transaction = await db.getTransactionById(paymentId);
+    // Get transaction details from database using external reference
+    // The external_reference is stored in our database as externalId
+    const externalReference = body.data?.external_reference;
+    
+    if (!externalReference) {
+      console.warn("[Webhook] Missing external reference in payment notification");
+      return res.status(400).json({
+        error: "Missing external reference",
+        paymentId,
+      });
+    }
+
+    const transaction = await db.getTransactionByExternalId(externalReference);
 
     if (!transaction) {
-      console.warn("[Webhook] Transaction not found for payment:", paymentId);
+      console.warn("[Webhook] Transaction not found for external reference:", externalReference);
       return res.status(404).json({
         error: "Transaction not found",
+        externalReference,
         paymentId,
       });
     }
