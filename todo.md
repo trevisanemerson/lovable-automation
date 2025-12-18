@@ -89,3 +89,11 @@
 - [ ] Documentação de API
 - [ ] Guia de uso para usuários
 - [ ] Documentação de arquitetura
+
+
+## Fluxo de Compra de Créditos
+- [x] Botão "Comprar Créditos" no dashboard
+- [x] Página de seleção de planos com cards interativos
+- [x] Integração com fluxo de pagamento PIX
+- [x] Redirecionamento após pagamento confirmado
+- [x] Validação de saldo antes de criar tarefa

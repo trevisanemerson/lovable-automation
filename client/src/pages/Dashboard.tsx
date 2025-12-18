@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Loader2, LogOut, Zap, History, Plus } from "lucide-react";
+import { Loader2, LogOut, Zap, History, Plus, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -77,6 +77,13 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-slate-300">{user.name || user.email}</span>
+            <Button
+              onClick={() => setLocation("/plans")}
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Comprar Créditos
+            </Button>
             <Button
               variant="ghost"
               onClick={() => logoutMutation.mutate()}
