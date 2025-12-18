@@ -106,3 +106,7 @@
 - [x] Crédito automático de saldo
 - [x] Logging e tratamento de erros
 - [x] Testes de webhook
+
+
+## Bug Fix
+- [x] QR Code não está sendo gerado corretamente

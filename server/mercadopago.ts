@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Payment, PreApprovalPlan } from "mercadopago";
 import { ENV } from "./_core/env";
+import QRCode from "qrcode";
 
 // Initialize Mercado Pago client
 const client = new MercadoPagoConfig({
@@ -52,14 +53,24 @@ export async function createPixPayment(
       throw new Error("Failed to generate PIX QR Code from Mercado Pago");
     }
 
-    const qrCode = response.point_of_interaction.transaction_data.qr_code;
-    const qrCodeUrl = response.point_of_interaction.transaction_data.qr_code || "";
+    const copyPasteCode = response.point_of_interaction.transaction_data.qr_code;
+    
+    // Generate QR Code as PNG in base64
+    const qrCodeDataUrl = await QRCode.toDataURL(copyPasteCode, {
+      errorCorrectionLevel: 'H',
+      type: 'image/png',
+      margin: 1,
+      width: 300,
+    });
+    
+    // Extract base64 from data URL
+    const base64QrCode = qrCodeDataUrl.replace('data:image/png;base64,', '');
 
     return {
       id: response.id?.toString() || "",
-      qrCode,
-      qrCodeUrl: qrCodeUrl || "",
-      copyPaste: qrCode,
+      qrCode: base64QrCode as string,
+      qrCodeUrl: qrCodeDataUrl as string,
+      copyPaste: copyPasteCode,
       externalId: params.externalReference,
       status: response.status || "pending",
       expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
