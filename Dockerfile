@@ -1,10 +1,14 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package.json ./
@@ -20,17 +24,28 @@ COPY . .
 RUN pnpm build
 
 # Runtime stage
-FROM node:22-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
-# Install Playwright dependencies
-RUN apk add --no-cache \
-    chromium \
-    firefox \
+# Install Playwright dependencies and browsers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgconf-2-4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libgbm1 \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxrandr2 \
+    libxinerama1 \
+    libxcursor1 \
+    libxi6 \
     dumb-init \
-    bash \
-    curl
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -48,8 +63,7 @@ COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/client/dist ./client/dist
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN useradd -m -u 1001 nodejs
 
 USER nodejs
 
@@ -58,7 +72,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 # Start application
-ENTRYPOINT ["/sbin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["node", "dist/index.js"]
 
 EXPOSE 3000
